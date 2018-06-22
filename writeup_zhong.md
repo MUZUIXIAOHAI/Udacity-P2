@@ -172,6 +172,8 @@ The 6nd image might be difficult to classify because the road sign only take up 
 
 the 8th image might be difficult to classify because the road sign is similar to the No passing road sign ,and the image's background is black.
 
+I print the sample image for each class ,so I can compare the diference with the taining images.
+
 other images work well for the model.
 
 #### 2. Discuss the model's predictions on these new traffic signs and compare the results to predicting on the test set. At a minimum, discuss what the predictions were, the accuracy on these new predictions, and compare the accuracy to the accuracy on the test set (OPTIONAL: Discuss the results in more detail as described in the "Stand Out Suggestions" part of the rubric).
