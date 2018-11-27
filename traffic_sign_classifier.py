@@ -12,71 +12,63 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-def download(url, file):
-	'''
-	Download file form <url>
-	:param url:URL to file form internet
-	:param file:Local file path
-	'''
-	if not os.path.isfile(file):
-		print('Downloading ' + file + '...')
-		urlretrieve(url, file)
-		print('Download Finished')
+import pandas as pd
+
+from cnn_model import *
 
 
-def un_zip(file_name):
-	"""
-	unzip the file 
-	"""
-	zip_file = zipfile.ZipFile(file_name)
-	file_name_front = os.path.splitext(file_name)
-	print("Unziping...")
+def show_all_kinds_images(figsize_input, X_data, y_data):
+	#show the 43 kinds data
+	#figsize_input - images sizes
+	plt.figure(figsize=figsize_input)
+	gs1 = gridspec.GridSpec(7,7)
+	gs1.update(wspace=0.1, hspace=0.1)
 
-	if os.path.isdir(file_name_front[0] + "_files"):
-		pass
-	else:
-		os.mkdir(file_name_front[0] + "_files")
-	for names in zip_file.namelist():
-		zip_file.extract(names,file_name_front[0] + "_files/")
-	print("Unzip finish")
-	zip_file.close()
+	for i in range(43):
+	    ax1 = plt.subplot(gs1[i])
+	    plt.axis('on')
+	    ax1.set_xticklabels([])
+	    ax1.set_yticklabels([])
+	    ax1.set_aspect('equal')
+	    
+	    index_y = np.argwhere(y_data == i)
+	    ind_plot = np.random.randint(1,len(index_y))
+	    plt.imshow(X_data[int(index_y[ind_plot])])
+	    plt.text(3,3,str(i), color = 'k', backgroundcolor = 'c')
+	    plt.axis('off')
 
+	plt.show()
 
+def show_datas_num(data_set):
+	#show datas number and souted it
+	data_i = [[i, sum(data_set == i )] for i in range(len(np.unique(data_set)))]
+	data_i_sorted = sorted(data_i, key=lambda x: x[1])
+
+	data_pd = pd.read_csv('signnames.csv')
+
+	data_pd['Occurance'] = pd.Series(np.asarray(data_i_sorted).T[1], index=np.asarray(data_i_sorted).T[0])
+	data_pd_sorted = data_pd.sort_values(['Occurance'], ascending=[0]).reset_index()
+	data_pd_sorted = data_pd_sorted.drop('index', 1)
+
+	data_pd_sorted
+
+	plt.figure(figsize = (12, 8))
+	plt.bar(range(43), height = data_pd_sorted["Occurance"])
+	plt.show()
 
 if __name__ == '__main__':
-	#if file did not existed, download it
-	if os.path.exists("./traffic-signs-data.zip"):
-		print("pass, file has been existed")
-	else:
-		download('https://s3-us-west-1.amazonaws.com/udacity-selfdrivingcar/traffic-signs-data.zip',\
-		 'traffic-signs-data.zip')
-
-	#if file did not unzip, unzip it
-	if os.path.exists("./traffic-signs-data_files/"):
-		print("pass, file has been unzip")
-	else:
-		un_zip('traffic-signs-data.zip')
-
-
-	#load the tainning data
-	training_file = 'traffic-signs-data_files/train.p'
-	validation_file= 'traffic-signs-data_files/valid.p'
-	testing_file = 'traffic-signs-data_files/test.p'
-
-	with open(training_file, mode='rb') as f:
-		train = pickle.load(f)
-	with open(validation_file, mode='rb') as f:
-		valid = pickle.load(f)
-	with open(testing_file, mode='rb') as f:
-		test = pickle.load(f)
-	    
-	X_train_origen, y_train_origen = train['features'], train['labels']
-	X_valid_origen, y_valid_origen = valid['features'], valid['labels']
-	X_test_origen, y_test_origen = test['features'], test['labels']
+	
+	url_link = "https://s3-us-west-1.amazonaws.com/udacity-selfdrivingcar/traffic-signs-data.zip"
+	file_name = "traffic-signs-data.zip"
+	Process_data = augment_images(url_link, file_name)
 
 	# print("X_train_origen: " + str(X_train_origen.shape) + str(y_train_origen.shape))
 	# print("X_valid_origen: " + str(X_valid_origen.shape) + str(y_valid_origen.shape))
 	# print("X_test_origen: " + str(X_test_origen.shape) + str(y_test_origen.shape))
+
+	X_train_origen, y_train_origen = Process_data.get_train_data_origen()
+	X_valid_origen, y_valid_origen = Process_data.get_vaild_data_origen()
+	X_test_origen, y_test_origen = Process_data.get_test_data_origen()
 
 	# Number of training examples
 	n_train = X_train_origen.shape[0]
@@ -99,27 +91,17 @@ if __name__ == '__main__':
 	print("Image data shape =", image_shape)
 	print("Number of classes =", n_classes)
 
+	# #show all kinds of images
+	# show_all_kinds_images((8,8) , X_train_origen, y_train_origen)
+	# #show datas number and souted it
+	# show_datas_num(y_train_origen)
 
-	#show the 43 kinds data
-	plt.figure(figsize=(16,18))
-	gs1 = gridspec.GridSpec(9,5)
-	gs1.update(wspace=0.01, hspace=0.02)
+	X_train, y_train = Process_data.train_data_peocess()
+	X_valid, y_valid = Process_data.vaild_data_process()
+	X_test, y_test = Process_data.test_data_process()
 
-	for i in range(43):
-	    ax1 = plt.subplot(gs1[i])
-	    plt.axis('on')
-	    ax1.set_xticklabels([])
-	    ax1.set_yticklabels([])
-	    ax1.set_aspect('equal')
-	    
-	    index_y = np.argwhere(y_train_origen == i)
-	    ind_plot = np.random.randint(1,len(index_y))
-	    plt.imshow(X_train_origen[int(index_y[ind_plot])])
-	    plt.text(2,4,str(i), color = 'k', backgroundcolor = 'c')
-	    plt.axis('off')
-
-	plt.show()
-
-
+	cnn_m = cnn_model_c()
+	cnn_m.create()
+	cnn_m.train(X_train, y_train, X_valid, y_valid, X_test, y_test)
 
 
